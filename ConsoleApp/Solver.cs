@@ -6,6 +6,6 @@ public class Solver
 {
     public static string Solve(TaskResponse taskResponse)
     {
-        return "42";
+        return PolynomialSolver.Solve(taskResponse.Question);
     }
 }
