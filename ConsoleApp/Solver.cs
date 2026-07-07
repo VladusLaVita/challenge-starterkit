@@ -7,6 +7,16 @@ public class Solver
 {
     public static string Solve(TaskResponse taskResponse, string taskType)
     {
-        return PolynomialSolver.Solve(taskResponse.Question);
+        switch (taskType) {
+            case "polynomial-roots":
+                return PolynomialSolver.Solve(taskResponse.Question);
+
+            case "cypher":
+                return Cypher.Solve(taskResponse.Question);
+
+            default:
+                throw new ArgumentException("I dunno the task bro :/");
+
+        }
     }
 }

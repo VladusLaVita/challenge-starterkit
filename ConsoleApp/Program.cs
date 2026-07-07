@@ -31,7 +31,7 @@ var challenge = await challengeClient.GetChallengeAsync(challengeId);
 Console.WriteLine(challenge.Description);
 Console.WriteLine("----------------\n");
 
-const string taskType = "polynomial-root";
+const string taskType = "cypher";
 
 var utcNow = DateTime.UtcNow;
 string currentRound = "1";
