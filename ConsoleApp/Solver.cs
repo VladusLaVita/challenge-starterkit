@@ -6,6 +6,6 @@ public class Solver
 {
     public static string Solve(TaskResponse taskResponse)
     {
-        return "42";
+        return Steganography.Solve(taskResponse.Question);
     }
 }

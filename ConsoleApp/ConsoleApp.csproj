@@ -12,4 +12,8 @@
     <ProjectReference Include="..\Challenge\Challenge.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <PackageReference Include="DotNetEnv" Version="3.2.0" />
+  </ItemGroup>
+
 </Project>

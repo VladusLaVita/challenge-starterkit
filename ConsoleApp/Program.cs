@@ -4,23 +4,16 @@ using Challenge.DataContracts;
 using ConsoleApp;
 using Task = System.Threading.Tasks.Task;
 
-
-// Данное приложение можно запускать под Windows, Linux, Mac.
-// Для запуска приложения необходимо скачать и установить .NET 8.
-// Скачать можно тут: https://dotnet.microsoft.com/download/dotnet
-
-
-const string teamSecret = ""; // Вставь сюда ключ команды
-if (string.IsNullOrEmpty(teamSecret))
+if (string.IsNullOrEmpty(DotEnv.SecretKey))
 {
     Console.WriteLine("Задай секрет своей команды, чтобы можно было делать запросы от ее имени");
     Console.ReadLine();
     return;
 }
 
-var challengeClient = new ChallengeClient(teamSecret);
+var challengeClient = new ChallengeClient(DotEnv.SecretKey);
+const string challengeId = "git-course";
 
-const string challengeId = "projects-course";
 Console.WriteLine($"Нажми ВВОД, чтобы получить информацию о соревновании {challengeId}");
 Console.ReadLine();
 Console.WriteLine("Ожидание...");
