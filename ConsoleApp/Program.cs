@@ -1,16 +1,21 @@
 ﻿using System;
+using System.IO;
 using Challenge;
 using Challenge.DataContracts;
 using ConsoleApp;
 using Task = System.Threading.Tasks.Task;
+using System.Text.Json;
 
 
-// Данное приложение можно запускать под Windows, Linux, Mac.
-// Для запуска приложения необходимо скачать и установить .NET 8.
-// Скачать можно тут: https://dotnet.microsoft.com/download/dotnet
+var path = Path.Combine(AppContext.BaseDirectory, "secrets.json");
+var json = File.ReadAllText(path);
 
+using var doc = JsonDocument.Parse(json);
 
-const string teamSecret = ""; // Вставь сюда ключ команды
+var teamSecret = doc.RootElement
+    .GetProperty("TeamSecret")
+    .GetString();
+
 if (string.IsNullOrEmpty(teamSecret))
 {
     Console.WriteLine("Задай секрет своей команды, чтобы можно было делать запросы от ее имени");
@@ -19,71 +24,80 @@ if (string.IsNullOrEmpty(teamSecret))
 }
 
 var challengeClient = new ChallengeClient(teamSecret);
+const string challengeId = "git-course";
 
-const string challengeId = "projects-course";
-Console.WriteLine($"Нажми ВВОД, чтобы получить информацию о соревновании {challengeId}");
-Console.ReadLine();
-Console.WriteLine("Ожидание...");
+Console.WriteLine($"Получение информации о соревновании {challengeId}...");
 var challenge = await challengeClient.GetChallengeAsync(challengeId);
 Console.WriteLine(challenge.Description);
-Console.WriteLine();
-Console.WriteLine("----------------");
-Console.WriteLine();
+Console.WriteLine("----------------\n");
 
-const string taskType = "starter";
+const string taskType = "polynomial-root";
 
 var utcNow = DateTime.UtcNow;
-string currentRound = null;
+string currentRound = "1";
 foreach (var round in challenge.Rounds)
 {
     if (round.StartTimestamp < utcNow && utcNow < round.EndTimestamp)
         currentRound = round.Id;
 }
 
-Console.WriteLine($"Нажми ВВОД, чтобы получить первые 50 взятых командой задач типа {taskType} в раунде {currentRound}");
-Console.ReadLine();
-Console.WriteLine("Ожидание...");
-var firstTasks = await challengeClient.GetTasksAsync(currentRound, taskType, TaskStatus.Pending, 0, 50);
-for (int i = 0; i < firstTasks.Count; i++)
+Console.WriteLine($"Бот запущен в пошаговом режиме для задач [{taskType}] (раунд {currentRound}).");
+Console.WriteLine("Нажимайте [ENTER] для подтверждения отправки ответов.\n");
+
+int successCount = 0;
+int failCount = 0;
+
+while (true)
 {
-    var task = firstTasks[i];
-    Console.WriteLine($"  Задание {i + 1}, статус {task.Status}");
-    Console.WriteLine($"  Формулировка: {task.UserHint}");
-    Console.WriteLine($"                {task.Question}");
-    Console.WriteLine();
+    try
+    {
+        Console.ForegroundColor = ConsoleColor.Cyan;
+        Console.WriteLine("Запрашиваю новую задачу у сервера...");
+        Console.ResetColor();
+
+        var newTask = await challengeClient.AskNewTaskAsync(currentRound, taskType);
+
+        Console.WriteLine($"[Новое задание] Статус: {newTask.Status}");
+        Console.WriteLine($"Вопрос: {newTask.Question}");
+
+        // Вычисляем ответ с помощью Solver
+        var answer = Solver.Solve(newTask);
+
+        // Подсвечиваем ответ желтым и ждем подтверждения от пользователя
+        Console.ForegroundColor = ConsoleColor.Yellow;
+        Console.WriteLine($"\n-> Робот посчитал ответ: {answer}");
+        Console.Write("Нажмите [ENTER], чтобы отправить этот ответ на сервер... ");
+        Console.ResetColor();
+
+        Console.ReadLine(); // Пауза для контроля человеком
+
+        Console.WriteLine("Отправка ответа на проверку...");
+        var updatedTask = await challengeClient.CheckTaskAnswerAsync(newTask.Id, answer);
+
+        if (updatedTask.Status == TaskStatus.Success)
+        {
+            successCount++;
+            Console.ForegroundColor = ConsoleColor.Green;
+            Console.WriteLine($"Ура! Ответ принят системой! (Решено: {successCount})\n");
+            Console.ResetColor();
+        }
+        else
+        {
+            failCount++;
+            Console.ForegroundColor = ConsoleColor.Red;
+            Console.WriteLine($"Похоже, ответ не подошел. (Ошибок: {failCount})");
+            Console.WriteLine($"Сервер ожидал другой ответ на: {updatedTask.Question}\n");
+            Console.ResetColor();
+        }
+    }
+    catch (Exception ex)
+    {
+        Console.ForegroundColor = ConsoleColor.DarkYellow;
+        Console.WriteLine($"Произошла ошибка при обмене данными с сервером: {ex.Message}");
+        Console.Write("Нажмите [ENTER], чтобы повторить попытку запроса... ");
+        Console.ResetColor();
+        Console.ReadLine();
+    }
+
+    Console.WriteLine("====================================\n");
 }
-Console.WriteLine("----------------");
-Console.WriteLine();
-
-Console.WriteLine($"Нажми ВВОД, чтобы получить задачу типа {taskType} в раунде {currentRound}");
-Console.ReadLine();
-Console.WriteLine("Ожидание...");
-var newTask = await challengeClient.AskNewTaskAsync(currentRound, taskType);
-Console.WriteLine($"  Новое задание, статус {newTask.Status}");
-Console.WriteLine($"  Формулировка: {newTask.UserHint}");
-Console.WriteLine($"                {newTask.Question}");
-Console.WriteLine();
-Console.WriteLine("----------------");
-Console.WriteLine();
-
-var answer = Solver.Solve(newTask);
-
-Console.WriteLine($"Нажми ВВОД, чтобы ответить на полученную задачу самым правильным ответом: {answer}");
-Console.ReadLine();
-Console.WriteLine("Ожидание...");
-var updatedTask = await challengeClient.CheckTaskAnswerAsync(newTask.Id, answer);
-Console.WriteLine($"  Новое задание, статус {updatedTask.Status}");
-Console.WriteLine($"  Формулировка:  {updatedTask.UserHint}");
-Console.WriteLine($"                 {updatedTask.Question}");
-Console.WriteLine($"  Ответ команды: {updatedTask.TeamAnswer}");
-Console.WriteLine();
-if (updatedTask.Status == TaskStatus.Success)
-    Console.WriteLine($"Ура! Ответ угадан!");
-else if (updatedTask.Status == TaskStatus.Failed)
-    Console.WriteLine($"Похоже ответ не подошел и задачу больше сдать нельзя...");
-Console.WriteLine();
-Console.WriteLine("----------------");
-Console.WriteLine();
-
-Console.WriteLine($"Нажми ВВОД, чтобы завершить работу программы");
-Console.ReadLine();
