@@ -31,7 +31,7 @@ var challenge = await challengeClient.GetChallengeAsync(challengeId);
 Console.WriteLine(challenge.Description);
 Console.WriteLine("----------------\n");
 
-const string taskType = "polynomial-root";
+const string taskType = "cypher";
 
 var utcNow = DateTime.UtcNow;
 string currentRound = "1";
@@ -61,7 +61,7 @@ while (true)
         Console.WriteLine($"Вопрос: {newTask.Question}");
 
         // Вычисляем ответ с помощью Solver
-        var answer = Solver.Solve(newTask);
+        var answer = Solver.Solve(newTask, taskType);
 
         // Подсвечиваем ответ желтым и ждем подтверждения от пользователя
         Console.ForegroundColor = ConsoleColor.Yellow;
