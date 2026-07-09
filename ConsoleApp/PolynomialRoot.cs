@@ -10,33 +10,43 @@ public static class PolynomialSolver
     {
         if (string.IsNullOrWhiteSpace(question)) return "no roots";
 
+        // Базовая очистка
         string cleaned = question.Replace(" ", "").Replace("(", "").Replace(")", "");
         if (cleaned.EndsWith("=0")) cleaned = cleaned.Substring(0, cleaned.Length - 2);
-
         cleaned = cleaned.Replace("+-", "-").Replace("-+", "-").Replace("--", "+");
 
         double a = 0, b = 0, c = 0;
 
+        // 1. Ищем x^2
         var matchA = Regex.Match(cleaned, @"(?<val>[-+]?\d*\.?\d*)\*?x\^2");
         if (matchA.Success)
         {
-            a = ParseCoefficient(matchA.Value.Replace("x^2", ""), 1.0);
+            a = ParseCoefficient(matchA.Groups["val"].Value, 1.0);
             cleaned = cleaned.Replace(matchA.Value, "");
         }
 
-        var matchB = Regex.Match(cleaned, @"(?<val>[-+]?\d*\.?\d*)\*?x");
+        // 2. Ищем x (строго БЕЗ ^2 на конце)
+        var matchB = Regex.Match(cleaned, @"(?<val>[-+]?\d*\.?\d*)\*?x(?!\^2)");
         if (matchB.Success)
         {
-            b = ParseCoefficient(matchB.Value.Replace("x", ""), 1.0);
+            b = ParseCoefficient(matchB.Groups["val"].Value, 1.0);
             cleaned = cleaned.Replace(matchB.Value, "");
         }
 
+        // 3. Все, что осталось — это свободный член c
         if (!string.IsNullOrWhiteSpace(cleaned))
         {
+            // Если остался чистый плюс, например "+5", TryParse с InvariantCulture его поймет.
+            // Но на случай если осталось только "+" или "-", превращаем в "0"
             if (cleaned == "+" || cleaned == "-") cleaned = "0";
-            double.TryParse(cleaned, NumberStyles.Any, CultureInfo.InvariantCulture, out c);
+
+            if (double.TryParse(cleaned, NumberStyles.Any, CultureInfo.InvariantCulture, out double parsedC))
+            {
+                c = parsedC;
+            }
         }
 
+        // Логика решения (ваша, она идеальна)
         if (Math.Abs(a) < 1e-9)
         {
             if (Math.Abs(b) < 1e-9) return "no roots";
@@ -68,7 +78,6 @@ public static class PolynomialSolver
 
     private static double ParseCoefficient(string value, double defaultValue)
     {
-        value = value.Replace("*", "");
         if (string.IsNullOrEmpty(value) || value == "+") return defaultValue;
         if (value == "-") return -defaultValue;
 
