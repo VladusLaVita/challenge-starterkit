@@ -17,6 +17,9 @@ public class Solver
             case "math":
                 return MathSolver.Solve(taskResponse.Question);
 
+            case "statistics":
+                return StatisticsSolver.Solve(taskResponse.Question);
+
             default:
                 throw new ArgumentException("I dunno the task bro :/");
 
