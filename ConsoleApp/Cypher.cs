@@ -1,29 +1,48 @@
 ﻿using System;
+using System.Text;
 
 namespace ConsoleApp;
 
-public static class Cypher
+public class Cypher
 {
+    private static readonly string Alphabet = " '0123456789abcdefghijklmnopqrstuvwxyz";
+
     public static string Solve(string question)
     {
-        if (string.IsNullOrWhiteSpace(question)) return string.Empty;
+        if (string.IsNullOrWhiteSpace(question))
+            return string.Empty;
 
-        int firstHash = question.IndexOf('#');
-        int secondHash = question.IndexOf('#', firstHash + 1);
-        int thirdHash = question.IndexOf('#', secondHash + 1);
+        var parts = question.Split('#', StringSplitOptions.RemoveEmptyEntries);
+        if (parts.Length < 2)
+            return string.Empty;
 
-        if (firstHash == -1 || secondHash == -1 || thirdHash == -1)
+        var config = parts[0];
+        var encryptedText = parts[1];
+
+        var shiftPart = config.Split('=');
+        if (shiftPart.Length < 2 || !int.TryParse(shiftPart[1], out int shift))
+            return string.Empty;
+
+        var result = new StringBuilder();
+        int alphabetLength = Alphabet.Length;
+
+        foreach (var c in encryptedText)
         {
-            return question;
+            int index = Alphabet.IndexOf(c);
+            if (index == -1)
+            {
+                result.Append(c);
+                continue;
+            }
+
+            // Сдвигаем влево для дешифрования
+            int newIndex = (index - shift) % alphabetLength;
+            if (newIndex < 0)
+                newIndex += alphabetLength;
+
+            result.Append(Alphabet[newIndex]);
         }
 
-        int startIndex = secondHash + 1;
-        int length = thirdHash - startIndex;
-        string cipherText = question.Substring(startIndex, length);
-
-        char[] charArray = cipherText.ToCharArray();
-        Array.Reverse(charArray);
-
-        return new string(charArray);
+        return result.ToString();
     }
 }
