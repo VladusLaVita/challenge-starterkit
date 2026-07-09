@@ -1,5 +1,6 @@
 using System;
 using Challenge.DataContracts;
+using ConsoleApp1;
 
 namespace ConsoleApp;
 
@@ -19,6 +20,9 @@ public class Solver
 
             case "statistics":
                 return StatisticsSolver.Solve(taskResponse.Question);
+
+            case "steganography":
+                return Steganography.Solve(taskResponse.Question);
 
             default:
                 throw new ArgumentException("I dunno the task bro :/");
