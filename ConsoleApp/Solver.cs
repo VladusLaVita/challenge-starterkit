@@ -14,6 +14,9 @@ public class Solver
             case "cypher":
                 return Cypher.Solve(taskResponse.Question);
 
+            case "math":
+                return MathSolver.Solve(taskResponse.Question);
+
             default:
                 throw new ArgumentException("I dunno the task bro :/");
 
