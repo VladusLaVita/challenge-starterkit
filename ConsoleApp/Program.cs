@@ -31,10 +31,10 @@ var challenge = await challengeClient.GetChallengeAsync(challengeId);
 Console.WriteLine(challenge.Description);
 Console.WriteLine("----------------\n");
 
-const string taskType = "cypher";
+string taskType = "cypher";
 
 var utcNow = DateTime.UtcNow;
-string currentRound = "1";
+string currentRound = "2";
 foreach (var round in challenge.Rounds)
 {
     if (round.StartTimestamp < utcNow && utcNow < round.EndTimestamp)
@@ -55,11 +55,14 @@ while (true)
         Console.WriteLine("Запрашиваю новую задачу у сервера...");
         Console.ResetColor();
 
-        var newTask = await challengeClient.AskNewTaskAsync(currentRound, taskType);
+        var newTask = await challengeClient.AskNewTaskAsync(currentRound);
 
         Console.WriteLine($"[Новое задание] Статус: {newTask.Status}");
         Console.WriteLine($"Вопрос: {newTask.Question}");
 
+        Console.WriteLine(newTask.TypeId);
+        Console.ReadLine();
+        taskType = newTask.TypeId;
         // Вычисляем ответ с помощью Solver
         var answer = Solver.Solve(newTask, taskType);
 
